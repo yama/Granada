@@ -204,13 +204,13 @@ class ORM implements ArrayAccess {
      * @param string $connection_name Which connection to use
      */
     public static function configure($key, $value = null, $connection_name = self::DEFAULT_CONNECTION) {
-        self::_setup_db_config($connection_name); //ensures at least default config is set
+        static::_setup_db_config($connection_name); //ensures at least default config is set
 
         if (is_array($key)) {
             // Shortcut: If only one array argument is passed,
             // assume it's an array of configuration settings
             foreach ($key as $conf_key => $conf_value) {
-                self::configure($conf_key, $conf_value, $connection_name);
+                static::configure($conf_key, $conf_value, $connection_name);
             }
         } else {
             if (is_null($value)) {
@@ -219,7 +219,7 @@ class ORM implements ArrayAccess {
                 $value = $key;
                 $key = 'connection_string';
             }
-            self::$_config[$connection_name][$key] = $value;
+            static::$_config[$connection_name][$key] = $value;
         }
     }
 
@@ -230,9 +230,9 @@ class ORM implements ArrayAccess {
      */
     public static function get_config($key = null, $connection_name = self::DEFAULT_CONNECTION) {
         if ($key) {
-            return self::$_config[$connection_name][$key];
+            return static::$_config[$connection_name][$key];
         } else {
-            return self::$_config[$connection_name];
+            return static::$_config[$connection_name];
         }
     }
 
@@ -240,7 +240,7 @@ class ORM implements ArrayAccess {
      * Delete all configs in _config array.
      */
     public static function reset_config() {
-        self::$_config = array();
+        static::$_config = array();
     }
 
     /**
@@ -254,8 +254,8 @@ class ORM implements ArrayAccess {
      * @return ORM
      */
     public static function for_table($table_name, $connection_name = self::DEFAULT_CONNECTION) {
-        self::_setup_db($connection_name);
-        return new self($table_name, array(), $connection_name);
+        static::_setup_db($connection_name);
+        return new static($table_name, array(), $connection_name);
     }
 
     /**
@@ -263,19 +263,19 @@ class ORM implements ArrayAccess {
      * @param string $connection_name Which connection to use
      */
     protected static function _setup_db($connection_name = self::DEFAULT_CONNECTION) {
-        if (!array_key_exists($connection_name, self::$_db) ||
-            !is_object(self::$_db[$connection_name])) {
-            self::_setup_db_config($connection_name);
+        if (!array_key_exists($connection_name, static::$_db) ||
+            !is_object(static::$_db[$connection_name])) {
+            static::_setup_db_config($connection_name);
 
             $db = new PDO(
-                self::$_config[$connection_name]['connection_string'],
-                self::$_config[$connection_name]['username'],
-                self::$_config[$connection_name]['password'],
-                self::$_config[$connection_name]['driver_options']
+                static::$_config[$connection_name]['connection_string'],
+                static::$_config[$connection_name]['username'],
+                static::$_config[$connection_name]['password'],
+                static::$_config[$connection_name]['driver_options']
             );
 
-            $db->setAttribute(PDO::ATTR_ERRMODE, self::$_config[$connection_name]['error_mode']);
-            self::set_db($db, $connection_name);
+            $db->setAttribute(PDO::ATTR_ERRMODE, static::$_config[$connection_name]['error_mode']);
+            static::set_db($db, $connection_name);
         }
     }
 
@@ -284,8 +284,8 @@ class ORM implements ArrayAccess {
     * @param string $connection_name Which connection to use
     */
     protected static function _setup_db_config($connection_name) {
-        if (!array_key_exists($connection_name, self::$_config)) {
-            self::$_config[$connection_name] = self::$_default_config;
+        if (!array_key_exists($connection_name, static::$_config)) {
+            static::$_config[$connection_name] = static::$_default_config;
         }
     }
 
@@ -298,17 +298,17 @@ class ORM implements ArrayAccess {
      * @param string $connection_name Which connection to use
      */
     public static function set_db($db, $connection_name = self::DEFAULT_CONNECTION) {
-        self::_setup_db_config($connection_name);
-        self::$_db[$connection_name] = $db;
-        self::_setup_identifier_quote_character($connection_name);
-        self::_setup_limit_clause_style($connection_name);
+        static::_setup_db_config($connection_name);
+        static::$_db[$connection_name] = $db;
+        static::_setup_identifier_quote_character($connection_name);
+        static::_setup_limit_clause_style($connection_name);
     }
 
     /**
      * Delete all registered PDO objects in _db array.
      */
     public static function reset_db() {
-        self::$_db = array();
+        static::$_db = array();
     }
 
     /**
@@ -319,9 +319,9 @@ class ORM implements ArrayAccess {
      * @param string $connection_name Which connection to use
      */
     protected static function _setup_identifier_quote_character($connection_name) {
-        if (is_null(self::$_config[$connection_name]['identifier_quote_character'])) {
-            self::$_config[$connection_name]['identifier_quote_character'] =
-                self::_detect_identifier_quote_character($connection_name);
+        if (is_null(static::$_config[$connection_name]['identifier_quote_character'])) {
+            static::$_config[$connection_name]['identifier_quote_character'] =
+                static::_detect_identifier_quote_character($connection_name);
         }
     }
 
@@ -332,9 +332,9 @@ class ORM implements ArrayAccess {
      * @param string $connection_name Which connection to use
      */
     public static function _setup_limit_clause_style($connection_name) {
-        if (is_null(self::$_config[$connection_name]['limit_clause_style'])) {
-            self::$_config[$connection_name]['limit_clause_style'] =
-                self::_detect_limit_clause_style($connection_name);
+        if (is_null(static::$_config[$connection_name]['limit_clause_style'])) {
+            static::$_config[$connection_name]['limit_clause_style'] =
+                static::_detect_limit_clause_style($connection_name);
         }
     }
 
@@ -345,7 +345,7 @@ class ORM implements ArrayAccess {
      * @return string
      */
     protected static function _detect_identifier_quote_character($connection_name) {
-        switch(self::get_db($connection_name)->getAttribute(PDO::ATTR_DRIVER_NAME)) {
+        switch(static::get_db($connection_name)->getAttribute(PDO::ATTR_DRIVER_NAME)) {
             case 'pgsql':
             case 'sqlsrv':
             case 'dblib':
@@ -368,7 +368,7 @@ class ORM implements ArrayAccess {
      * @return string Limit clause style keyword/constant
      */
     protected static function _detect_limit_clause_style($connection_name) {
-        switch(self::get_db($connection_name)->getAttribute(PDO::ATTR_DRIVER_NAME)) {
+        switch(static::get_db($connection_name)->getAttribute(PDO::ATTR_DRIVER_NAME)) {
             case 'sqlsrv':
             case 'dblib':
             case 'mssql':
@@ -387,8 +387,8 @@ class ORM implements ArrayAccess {
      * @return PDO
      */
     public static function get_db($connection_name = self::DEFAULT_CONNECTION) {
-        self::_setup_db($connection_name); // required in case this is called before Idiorm is instantiated
-        return self::$_db[$connection_name];
+        static::_setup_db($connection_name); // required in case this is called before Idiorm is instantiated
+        return static::$_db[$connection_name];
     }
 
     /**
@@ -403,8 +403,8 @@ class ORM implements ArrayAccess {
      * @return bool Success
      */
     public static function raw_execute($query, $parameters = array(), $connection_name = self::DEFAULT_CONNECTION) {
-        self::_setup_db($connection_name);
-        return self::_execute($query, $parameters, $connection_name);
+        static::_setup_db($connection_name);
+        return static::_execute($query, $parameters, $connection_name);
     }
 
     /**
@@ -413,7 +413,7 @@ class ORM implements ArrayAccess {
      * @return PDOStatement
      */
     public static function get_last_statement() {
-        return self::$_last_statement;
+        return static::$_last_statement;
     }
 
    /**
@@ -426,12 +426,15 @@ class ORM implements ArrayAccess {
     * @return bool Response of PDOStatement::execute()
     */
     protected static function _execute($query, $parameters = array(), $connection_name = self::DEFAULT_CONNECTION) {
-        self::_log_query($query, $parameters, $connection_name);
-        $statement = self::get_db($connection_name)->prepare($query);
+        $statement = static::get_db($connection_name)->prepare($query);
 
-        self::$_last_statement = $statement;
+        static::$_last_statement = $statement;
 
-        return $statement->execute($parameters);
+        $time = microtime(true);
+        $q = $statement->execute($parameters);
+        static::_log_query($query, $parameters, $connection_name, (microtime(true)-$time));
+
+        return $q;
     }
 
     /**
@@ -447,19 +450,19 @@ class ORM implements ArrayAccess {
      * @param string $connection_name Which connection to use
      * @return bool
      */
-    protected static function _log_query($query, $parameters, $connection_name) {
+    protected static function _log_query($query, $parameters, $connection_name, $time) {
         // If logging is not enabled, do nothing
-        if (!self::$_config[$connection_name]['logging']) {
+        if (!static::$_config[$connection_name]['logging']) {
             return false;
         }
 
-        if (!isset(self::$_query_log[$connection_name])) {
-            self::$_query_log[$connection_name] = array();
+        if (!isset(static::$_query_log[$connection_name])) {
+            static::$_query_log[$connection_name] = array();
         }
 
         if (count($parameters) > 0) {
             // Escape the parameters
-            $parameters = array_map(array(self::$_db[$connection_name], 'quote'), $parameters);
+            $parameters = array_map(array(static::$_db[$connection_name], 'quote'), $parameters);
 
             // Avoid %format collision for vsprintf
             $query = str_replace("%", "%%", $query);
@@ -477,13 +480,13 @@ class ORM implements ArrayAccess {
             $bound_query = $query;
         }
 
-        self::$_last_query = $bound_query;
-        self::$_query_log[$connection_name][] = $bound_query;
+        static::$_last_query = $bound_query;
+        static::$_query_log[$connection_name][] = $bound_query;
 
 
-        if(is_callable(self::$_config[$connection_name]['logger'])){
-            $logger = self::$_config[$connection_name]['logger'];
-            $logger($bound_query);
+        if(is_callable(static::$_config[$connection_name]['logger'])){
+            $logger = static::$_config[$connection_name]['logger'];
+            $logger($bound_query, $time);
         }
 
         return true;
@@ -499,13 +502,13 @@ class ORM implements ArrayAccess {
      */
     public static function get_last_query($connection_name = null) {
         if ($connection_name === null) {
-            return self::$_last_query;
+            return static::$_last_query;
         }
-        if (!isset(self::$_query_log[$connection_name])) {
+        if (!isset(static::$_query_log[$connection_name])) {
             return '';
         }
 
-        return end(self::$_query_log[$connection_name]);
+        return end(static::$_query_log[$connection_name]);
     }
 
     /**
@@ -516,8 +519,8 @@ class ORM implements ArrayAccess {
      * @param string $connection_name Which connection to use
      */
     public static function get_query_log($connection_name = self::DEFAULT_CONNECTION) {
-        if (isset(self::$_query_log[$connection_name])) {
-            return self::$_query_log[$connection_name];
+        if (isset(static::$_query_log[$connection_name])) {
+            return static::$_query_log[$connection_name];
         }
         return array();
     }
@@ -527,7 +530,7 @@ class ORM implements ArrayAccess {
      * @return array
      */
     public static function get_connection_names() {
-        return array_keys(self::$_db);
+        return array_keys(static::$_db);
     }
 
     // ------------------------ //
@@ -545,9 +548,9 @@ class ORM implements ArrayAccess {
         $this->_connection_name = $connection_name;
 
         // Set the flag as config dictates
-        $this->_associative_results  = self::$_config[$this->_connection_name]['find_many_primary_id_as_key'];
+        $this->_associative_results  = static::$_config[$this->_connection_name]['find_many_primary_id_as_key'];
 
-        self::_setup_db_config($connection_name);
+        static::_setup_db_config($connection_name);
     }
 
     /**
@@ -589,7 +592,7 @@ class ORM implements ArrayAccess {
      * @return ORM instance
      */
     public function reset_associative() {
-        $this->_associative_results  = self::$_config[$this->_connection_name]['find_many_primary_id_as_key'];
+        $this->_associative_results  = static::$_config[$this->_connection_name]['find_many_primary_id_as_key'];
         return $this;
     }
 
@@ -648,7 +651,7 @@ class ORM implements ArrayAccess {
      * @return array|\ResultSet
      */
     public function find_many() {
-        if(self::$_config[$this->_connection_name]['return_result_sets']) {
+        if(static::$_config[$this->_connection_name]['return_result_sets']) {
             return $this->find_result_set();
         }
         return $this->_find_many();
@@ -1079,8 +1082,8 @@ class ORM implements ArrayAccess {
             $values = array($values);
         }
         array_push($this->$conditions_class_property_name, array(
-            self::CONDITION_FRAGMENT => $fragment,
-            self::CONDITION_VALUES => $values,
+            static::CONDITION_FRAGMENT => $fragment,
+            static::CONDITION_VALUES => $values,
         ));
         return $this;
     }
@@ -1110,6 +1113,19 @@ class ORM implements ArrayAccess {
      * separated by commas. Eg "?, ?, ?"
      */
     protected function _create_placeholders($fields) {
+        switch(true){
+            case is_scalar($fields):{
+                $fields = array($fields);
+                break;
+            }
+            case is_array($fields):{
+                $fields = array_values($fields);
+                break;
+            }
+            default:{
+                $fields = array();
+            }
+        }
         if(!empty($fields)) {
             $db_fields = array();
             foreach($fields as $key => $value) {
@@ -1456,7 +1472,7 @@ class ORM implements ArrayAccess {
         $result_columns = join(', ', $this->_result_columns);
 
         if (!is_null($this->_limit) &&
-            self::$_config[$this->_connection_name]['limit_clause_style'] === ORM::LIMIT_STYLE_TOP_N) {
+            static::$_config[$this->_connection_name]['limit_clause_style'] === ORM::LIMIT_STYLE_TOP_N) {
             $fragment .= "TOP {$this->_limit} ";
         }
 
@@ -1521,8 +1537,8 @@ class ORM implements ArrayAccess {
 
         $conditions = array();
         foreach ($this->$conditions_class_property_name as $condition) {
-            $conditions[] = $condition[self::CONDITION_FRAGMENT];
-            $this->_values = array_merge($this->_values, $condition[self::CONDITION_VALUES]);
+            $conditions[] = $condition[static::CONDITION_FRAGMENT];
+            $this->_values = array_merge($this->_values, $condition[static::CONDITION_VALUES]);
         }
 
         return strtoupper($type) . " " . join(" AND ", $conditions);
@@ -1544,8 +1560,8 @@ class ORM implements ArrayAccess {
     protected function _build_limit() {
         $fragment = '';
         if (!is_null($this->_limit) &&
-            self::$_config[$this->_connection_name]['limit_clause_style'] == ORM::LIMIT_STYLE_LIMIT) {
-            if (self::$_db[$this->_connection_name]->getAttribute(PDO::ATTR_DRIVER_NAME) == 'firebird') {
+            static::$_config[$this->_connection_name]['limit_clause_style'] == ORM::LIMIT_STYLE_LIMIT) {
+            if (static::$_db[$this->_connection_name]->getAttribute(PDO::ATTR_DRIVER_NAME) == 'firebird') {
                 $fragment = 'ROWS';
             } else {
                 $fragment = 'LIMIT';
@@ -1561,7 +1577,7 @@ class ORM implements ArrayAccess {
     protected function _build_offset() {
         if (!is_null($this->_offset)) {
             $clause = 'OFFSET';
-            if (self::$_db[$this->_connection_name]->getAttribute(PDO::ATTR_DRIVER_NAME) == 'firebird') {
+            if (static::$_db[$this->_connection_name]->getAttribute(PDO::ATTR_DRIVER_NAME) == 'firebird') {
                 $clause = 'TO';
             }
             return "$clause " . $this->_offset;
@@ -1607,7 +1623,7 @@ class ORM implements ArrayAccess {
             return $part;
         }
 
-        $quote_character = self::$_config[$this->_connection_name]['identifier_quote_character'];
+        $quote_character = static::$_config[$this->_connection_name]['identifier_quote_character'];
         // double up any identifier quotes to escape them
         return $quote_character .
                str_replace($quote_character,
@@ -1630,8 +1646,8 @@ class ORM implements ArrayAccess {
      * is cached for the key, return the value. Otherwise, return false.
      */
     protected static function _check_query_cache($cache_key, $connection_name = self::DEFAULT_CONNECTION) {
-        if (isset(self::$_query_cache[$connection_name][$cache_key])) {
-            return self::$_query_cache[$connection_name][$cache_key];
+        if (isset(static::$_query_cache[$connection_name][$cache_key])) {
+            return static::$_query_cache[$connection_name][$cache_key];
         }
         return false;
     }
@@ -1640,17 +1656,17 @@ class ORM implements ArrayAccess {
      * Clear the query cache
      */
     public static function clear_cache() {
-        self::$_query_cache = array();
+        static::$_query_cache = array();
     }
 
     /**
      * Add the given value to the query cache.
      */
     protected static function _cache_query_result($cache_key, $value, $connection_name = self::DEFAULT_CONNECTION) {
-        if (!isset(self::$_query_cache[$connection_name])) {
-            self::$_query_cache[$connection_name] = array();
+        if (!isset(static::$_query_cache[$connection_name])) {
+            static::$_query_cache[$connection_name] = array();
         }
-        self::$_query_cache[$connection_name][$cache_key] = $value;
+        static::$_query_cache[$connection_name][$cache_key] = $value;
     }
 
     /**
@@ -1659,11 +1675,11 @@ class ORM implements ArrayAccess {
      */
     protected function _run() {
         $query = $this->_build_select();
-        $caching_enabled = self::$_config[$this->_connection_name]['caching'];
+        $caching_enabled = static::$_config[$this->_connection_name]['caching'];
 
         if ($caching_enabled) {
-            $cache_key = self::_create_cache_key($query, $this->_values);
-            $cached_result = self::_check_query_cache($cache_key, $this->_connection_name);
+            $cache_key = static::_create_cache_key($query, $this->_values);
+            $cached_result = static::_check_query_cache($cache_key, $this->_connection_name);
 
             if ($cached_result !== false) {
                 $this->reset();
@@ -1671,8 +1687,8 @@ class ORM implements ArrayAccess {
             }
         }
 
-        self::_execute($query, $this->_values, $this->_connection_name);
-        $statement = self::get_last_statement();
+        static::_execute($query, $this->_values, $this->_connection_name);
+        $statement = static::get_last_statement();
 
         $rows = array();
         while ($row = $statement->fetch(PDO::FETCH_ASSOC)) {
@@ -1680,7 +1696,7 @@ class ORM implements ArrayAccess {
         }
 
         if ($caching_enabled) {
-            self::_cache_query_result($cache_key, $rows, $this->_connection_name);
+            static::_cache_query_result($cache_key, $rows, $this->_connection_name);
         }
 
         // reset Idiorm after executing the query
@@ -1730,10 +1746,10 @@ class ORM implements ArrayAccess {
         if (!is_null($this->_instance_id_column)) {
             return $this->_instance_id_column;
         }
-        if (isset(self::$_config[$this->_connection_name]['id_column_overrides'][$this->_table_name])) {
-            return self::$_config[$this->_connection_name]['id_column_overrides'][$this->_table_name];
+        if (isset(static::$_config[$this->_connection_name]['id_column_overrides'][$this->_table_name])) {
+            return static::$_config[$this->_connection_name]['id_column_overrides'][$this->_table_name];
         }
-        return self::$_config[$this->_connection_name]['id_column'];
+        return static::$_config[$this->_connection_name]['id_column'];
     }
 
     /**
@@ -1836,16 +1852,16 @@ class ORM implements ArrayAccess {
             }
         }
 
-        $success = self::_execute($query, $values, $this->_connection_name);
+        $success = static::_execute($query, $values, $this->_connection_name);
 
         // If we've just inserted a new record, set the ID of this object
         if ($this->_is_new) {
             $this->_is_new = false;
             if (is_null($this->id())) {
-                if(self::$_db[$this->_connection_name]->getAttribute(PDO::ATTR_DRIVER_NAME) == 'pgsql') {
-                    $this->_data[$this->_get_id_column_name()] = self::get_last_statement()->fetchColumn();
+                if(static::$_db[$this->_connection_name]->getAttribute(PDO::ATTR_DRIVER_NAME) == 'pgsql') {
+                    $this->_data[$this->_get_id_column_name()] = static::get_last_statement()->fetchColumn();
                 } else {
-                    $this->_data[$this->_get_id_column_name()] = self::$_db[$this->_connection_name]->lastInsertId();
+                    $this->_data[$this->_get_id_column_name()] = static::$_db[$this->_connection_name]->lastInsertId();
                 }
             }
         }
@@ -1888,7 +1904,7 @@ class ORM implements ArrayAccess {
         $placeholders = $this->_create_placeholders($this->_dirty_fields);
         $query[] = "({$placeholders})";
 
-        if (self::$_db[$this->_connection_name]->getAttribute(PDO::ATTR_DRIVER_NAME) == 'pgsql') {
+        if (static::$_db[$this->_connection_name]->getAttribute(PDO::ATTR_DRIVER_NAME) == 'pgsql') {
             $query[] = 'RETURNING ' . $this->_quote_identifier($this->_get_id_column_name());
         }
 
@@ -1927,7 +1943,7 @@ class ORM implements ArrayAccess {
             "= ?",
         ));
 
-        return self::_execute($query, array($this->id()), $this->_connection_name);
+        return static::_execute($query, array($this->id()), $this->_connection_name);
     }
 
     /**
@@ -1956,7 +1972,7 @@ class ORM implements ArrayAccess {
             ));
         }
 
-        return self::_execute($query, $this->_values, $this->_connection_name);
+        return static::_execute($query, $this->_values, $this->_connection_name);
     }
 
 

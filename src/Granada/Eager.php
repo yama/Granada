@@ -62,7 +62,7 @@
                         throw new Exception("Attempting to eager load [{$relationship['name']}], but the relationship is not defined.", '500');
                     }
 
-                    self::eagerly($model, $results, $relationship, $return_result_set);
+                    static::eagerly($model, $results, $relationship, $return_result_set);
                 }
             }
             return $results;
@@ -118,11 +118,11 @@
 
                 if (in_array($relating = $model->relating, array('has_one', 'has_many', 'belongs_to')))
                 {
-                    return self::$relating($relationship, $parents, $model->relating_key, $include['name'], $return_result_set);
+                    return static::$relating($relationship, $parents, $model->relating_key, $include['name'], $return_result_set);
                 }
                 else
                 {
-                    self::has_many_through($relationship, $parents, $model->relating_key, $model->relating_table, $include['name'], $return_result_set);
+                    static::has_many_through($relationship, $parents, $model->relating_key, $model->relating_table, $include['name'], $return_result_set);
                 }
             }
         }

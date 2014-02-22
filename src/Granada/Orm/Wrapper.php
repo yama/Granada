@@ -58,8 +58,8 @@ class Wrapper extends ORM {
      * created class is ORMWrapper, not ORM
      */
     public static function for_table($table_name, $connection_name = parent::DEFAULT_CONNECTION) {
-        self::_setup_db($connection_name);
-        return new self($table_name, array(), $connection_name);
+        static::_setup_db($connection_name);
+        return new static($table_name, array(), $connection_name);
     }
 
     /**
@@ -151,7 +151,7 @@ class Wrapper extends ORM {
             // set result on an result set for the eager load to work
             $key = (isset($result->{$this->_instance_id_column}) && $this->_associative_results) ? $result->id() : 0;
             $results = array($key => $result);
-            Eager::hydrate($this, $results, self::$_config[$this->_connection_name]['return_result_sets']);
+            Eager::hydrate($this, $results, static::$_config[$this->_connection_name]['return_result_sets']);
             // return the result as element, not result set
             $result = $results[$key];
         }
@@ -167,7 +167,7 @@ class Wrapper extends ORM {
      */
     public function find_many() {
         $instances = parent::find_many();
-        return $instances ? Eager::hydrate($this, $instances, self::$_config[$this->_connection_name]['return_result_sets']) : $instances;
+        return $instances ? Eager::hydrate($this, $instances, static::$_config[$this->_connection_name]['return_result_sets']) : $instances;
     }
 
     /**
@@ -252,7 +252,7 @@ class Wrapper extends ORM {
     {
         $key = ($key) ? $key : 'id';
         $value = ($value) ? $value : 'name';
-        return self::assoc_to_keyval($this->select_raw("$key,$value")->order_by_asc($value)->find_array(), $key, $value);
+        return static::assoc_to_keyval($this->select_raw("$key,$value")->order_by_asc($value)->find_array(), $key, $value);
     }
 
 
